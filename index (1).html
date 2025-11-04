@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎃 Calabazas Interactivas con Fantasmas 👻</title>
+<style>
+  body {
+    margin: 0;
+    background: rgb(15,18,28);
+    overflow: hidden;
+  }
+  canvas {
+    display: block;
+    background: rgb(15,18,28);
+  }
+</style>
+</head>
+<body>
+<canvas id="halloween"></canvas>
+<script>
+window.onload = () => {
+  const canvas = document.getElementById("halloween");
+  const ctx = canvas.getContext("2d");
+  let ghosts = [], pumpkins = [];
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    setupPumpkins();
+  }
+
+  class Pumpkin {
+    constructor(x,y,w,h,color){this.x=x;this.y=y;this.w=w;this.h=h;this.color=color;}
+    contains(px,py){
+      let dx=px-(this.x+this.w/2),dy=py-this.y;
+      let rx=this.w*0.45,ry=this.h/2;
+      return (dx*dx)/(rx*rx)+(dy*dy)/(ry*ry)<=1;
+    }
+  }
+
+  class Ghost {
+    constructor(x,y){this.x=x;this.y=y;this.alpha=1;this.sway=Math.random()*Math.PI*2;}
+    update(){this.y-=1.5;this.x+=Math.sin(Date.now()/300+this.sway)*0.8;this.alpha-=0.01;}
+  }
+
+  function setupPumpkins(){
+    pumpkins=[];
+    const w=canvas.width,h=canvas.height;
+    const pw=Math.min(w/4,h-80);
+    const ph=pw*0.75;
+    const cy=h/2+20;
+    const gap=(w-3*pw)/4;
+    pumpkins.push(new Pumpkin(gap,cy,pw,ph,"#2E8B57"));
+    pumpkins.push(new Pumpkin(gap*2+pw,cy,pw,ph,"#FF8C00"));
+    pumpkins.push(new Pumpkin(gap*3+pw*2,cy,pw,ph,"#2E8B57"));
+  }
+
+  function drawGhost(g){
+    if(g.alpha<=0)return;
+    ctx.save();
+    ctx.globalAlpha=g.alpha;
+    const gw=60,gh=80;
+    const gx=g.x-gw/2,gy=g.y-gh/2;
+    ctx.fillStyle="white";
+    ctx.beginPath();
+    ctx.roundRect(gx,gy,gw,gh-20,25);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(gx+gw/2,gy+gh-20,gw/2,0,Math.PI,true);
+    ctx.fill();
+    ctx.fillStyle="black";
+    ctx.beginPath();
+    ctx.ellipse(gx+20,gy+25,5,8,0,0,Math.PI*2);
+    ctx.ellipse(gx+40,gy+25,5,8,0,0,Math.PI*2);
+    ctx.ellipse(gx+30,gy+55,5,5,0,0,Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawPumpkin(p){
+    const cx=p.x,cy=p.y,w=p.w,h=p.h;
+    const top=cy-h/2;
+
+    let glow=ctx.createRadialGradient(cx+w/2,cy,0,cx+w/2,cy,Math.max(w,h)*0.7);
+    glow.addColorStop(0,p.color+"55");
+    glow.addColorStop(1,"rgba(0,0,0,0)");
+    ctx.fillStyle=glow;
+    ctx.beginPath();
+    ctx.ellipse(cx+w/2,cy,w*0.9,h*0.7,0,0,Math.PI*2);
+    ctx.fill();
+
+    ctx.fillStyle=p.color;
+    ctx.beginPath();
+    ctx.ellipse(cx+w*0.3,cy,w*0.45,h/2,0,0,Math.PI*2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(cx+w/2,cy,w*0.5,h/2.2,0,0,Math.PI*2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(cx+w*0.7,cy,w*0.45,h/2,0,0,Math.PI*2);
+    ctx.fill();
+
+    ctx.strokeStyle="rgba(35,35,35,0.8)";
+    ctx.lineWidth=Math.max(2,w*0.01);
+    ctx.strokeRect(cx+w*0.05,top,w*0.9,h);
+
+    ctx.strokeStyle="rgba(35,35,35,0.8)";
+    ctx.lineWidth=Math.max(1.5,w*0.006);
+    ctx.beginPath();
+    ctx.moveTo(cx+w*0.22,top);
+    ctx.bezierCurveTo(cx+w*0.15,cy,cx+w*0.15,cy,cx+w*0.22,top+h);
+    ctx.moveTo(cx+w*0.5,top);
+    ctx.bezierCurveTo(cx+w*0.5,cy,cx+w*0.5,cy,cx+w*0.5,top+h);
+    ctx.moveTo(cx+w*0.78,top);
+    ctx.bezierCurveTo(cx+w*0.85,cy,cx+w*0.85,cy,cx+w*0.78,top+h);
+    ctx.stroke();
+
+    const stemW=w*0.12,stemH=h*0.2;
+    const stemX=cx+w*0.44,stemY=top-stemH*0.4;
+    ctx.fillStyle="#5E401C";
+    ctx.fillRect(stemX,stemY,stemW,stemH);
+    ctx.strokeRect(stemX,stemY,stemW,stemH);
+
+    ctx.fillStyle="#228B22";
+    ctx.beginPath();
+    ctx.ellipse(stemX-stemW*0.6,stemY+stemH*0.2,stemW*0.4,stemH*0.3,0,0,Math.PI*2);
+    ctx.fill();
+    ctx.stroke();
+
+    drawFace(cx,top,w,h);
+  }
+
+  function drawFace(x,top,w,h){
+    const faceTop=top+h*0.35,faceH=h*0.4,faceW=w*0.7,faceX=x+(w-faceW)/2;
+    ctx.fillStyle="#FFE678";
+    ctx.beginPath();
+    ctx.moveTo(faceX+faceW*0.2,faceTop+faceH*0.1);
+    ctx.lineTo(faceX+faceW*0.32,faceTop+faceH*0.3);
+    ctx.lineTo(faceX+faceW*0.08,faceTop+faceH*0.3);
+    ctx.closePath();ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(faceX+faceW*0.8,faceTop+faceH*0.1);
+    ctx.lineTo(faceX+faceW*0.68,faceTop+faceH*0.3);
+    ctx.lineTo(faceX+faceW*0.92,faceTop+faceH*0.3);
+    ctx.closePath();ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(faceX+faceW/2,faceTop+faceH*0.35);
+    ctx.lineTo(faceX+faceW*0.55,faceTop+faceH*0.55);
+    ctx.lineTo(faceX+faceW*0.45,faceTop+faceH*0.55);
+    ctx.closePath();ctx.fill();
+    ctx.fillRect(faceX+faceW*0.18,faceTop+faceH*0.6,faceW*0.64,faceH*0.18);
+    ctx.strokeStyle="rgba(30,30,30,0.6)";
+    ctx.stroke();
+  }
+
+  function drawGround(){
+    const w=canvas.width,h=canvas.height;
+    const ph=Math.min(w/4,h-80)*0.75;
+    const cy=h/2+20;
+    ctx.fillStyle="#4B0082";
+    ctx.fillRect(0,cy+ph/2+10,w,h);
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    drawGround();
+    pumpkins.forEach(drawPumpkin);
+    ghosts.forEach(drawGhost);
+    ghosts=ghosts.filter(g=>g.alpha>0);
+    ghosts.forEach(g=>g.update());
+    requestAnimationFrame(draw);
+  }
+
+  canvas.addEventListener("click",e=>{
+    const rect=canvas.getBoundingClientRect();
+    const x=e.clientX-rect.left,y=e.clientY-rect.top;
+    pumpkins.forEach(p=>{
+      if(p.contains(x,y))
+        ghosts.push(new Ghost(p.x+p.w/2,p.y-p.h/2));
+    });
+  });
+
+  resize();
+  draw();
+};
+</script>
+</body>
+</html>
